@@ -1,24 +1,65 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import 'react-native-reanimated';
 
+import { CustomerAuthProvider } from '@/hooks/useCustomerAuth';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+import { hydrateAuthStorage } from '@/lib/auth-storage';
+import { hydratePendingOrderStorage } from '@/lib/pending-order';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    void Promise.all([hydrateAuthStorage(), hydratePendingOrderStorage()]).finally(() => {
+      if (mounted) {
+        setHydrated(true);
+      }
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (!hydrated) {
+    return (
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0b1220' }}>
+          <ActivityIndicator color="#f97316" />
+        </View>
+        <StatusBar style="light" />
+      </ThemeProvider>
+    );
+  }
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
+      <CustomerAuthProvider>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: '#0b1220' },
+          }}
+        >
+          <Stack.Screen name="index" />
+          <Stack.Screen name="(app)" />
+          <Stack.Screen name="login" />
+          <Stack.Screen name="signup" />
+          <Stack.Screen name="password-update" />
+          <Stack.Screen name="restaurants/[restaurantId]" />
+          <Stack.Screen name="checkout" />
+          <Stack.Screen name="order-confirmation" />
+          <Stack.Screen name="kitchen" />
+        </Stack>
+      </CustomerAuthProvider>
+      <StatusBar style="light" />
     </ThemeProvider>
   );
 }
