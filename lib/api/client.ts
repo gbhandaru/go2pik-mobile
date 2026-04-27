@@ -43,6 +43,57 @@ async function parseJson(response: Response) {
   }
 }
 
+function shouldTryNextBaseUrl(data: unknown, response: Response, options: RequestOptions) {
+  if (!ENV.API_BASE_URLS || ENV.API_BASE_URLS.length <= 1) {
+    return false;
+  }
+
+  if (response.ok) {
+    if (options.method && options.method.toUpperCase() !== 'GET') {
+      return false;
+    }
+
+    return Array.isArray(data) && data.length === 0;
+  }
+
+  return response.status === 401 || response.status === 403 || response.status === 404 || response.status >= 500;
+}
+
+async function fetchFromBaseUrl(baseUrl: string, path: string, options: RequestOptions) {
+  const scope = options.scope ?? 'customer';
+  const token = options.auth === false ? null : getToken(scope);
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(options.headers || {}),
+  };
+
+  const body =
+    options.body == null
+      ? undefined
+      : typeof options.body === 'string'
+        ? options.body
+        : JSON.stringify(options.body);
+
+  const url = `${baseUrl}${path}`;
+  if (__DEV__) {
+    console.log('[apiRequest:start]', { url, method: options.method || 'GET', scope });
+  }
+
+  const response = await fetch(url, {
+    method: options.method || 'GET',
+    headers,
+    body,
+  });
+
+  const data = await parseJson(response);
+  if (__DEV__) {
+    console.log('[apiRequest:end]', { url, status: response.status, ok: response.ok, hasData: data != null });
+  }
+
+  return { response, data, url };
+}
+
 async function refreshActiveSession(scope: SessionScope) {
   const refreshToken = getRefresh(scope);
   if (!refreshToken) return false;
@@ -74,37 +125,41 @@ async function refreshActiveSession(scope: SessionScope) {
 
 export async function apiRequest(path: string, options: RequestOptions = {}) {
   const scope = options.scope ?? 'customer';
-  const token = options.auth === false ? null : getToken(scope);
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...(options.headers || {}),
-  };
+  const baseUrls =
+    ENV.API_BASE_URLS.length > 0
+      ? ENV.API_BASE_URLS
+      : [ENV.API_BASE_URL].filter(Boolean);
 
-  const body =
-    options.body == null
-      ? undefined
-      : typeof options.body === 'string'
-        ? options.body
-        : JSON.stringify(options.body);
+  let lastError: Error | null = null;
 
-  const url = `${ENV.API_BASE_URL}${path}`;
-  const response = await fetch(url, {
-    method: options.method || 'GET',
-    headers,
-    body,
-  });
+  for (let index = 0; index < baseUrls.length; index += 1) {
+    const baseUrl = baseUrls[index];
+    if (!baseUrl) {
+      continue;
+    }
 
-  const data = await parseJson(response);
+    const { response, data, url } = await fetchFromBaseUrl(baseUrl, path, options);
 
-  if (!response.ok) {
+    if (response.ok) {
+      if (shouldTryNextBaseUrl(data, response, options) && index < baseUrls.length - 1) {
+        continue;
+      }
+      return data;
+    }
+
     const message = data?.error || data?.message || 'API request failed';
-    const shouldRetry = (response.status === 401 || response.status === 403) && options.auth !== false && !options._retried;
-    if (shouldRetry) {
+    const shouldRetrySession = (response.status === 401 || response.status === 403) && options.auth !== false && !options._retried;
+    if (shouldRetrySession) {
       const refreshed = await refreshActiveSession(scope);
       if (refreshed) {
         return apiRequest(path, { ...options, _retried: true });
       }
+    }
+
+    if (shouldTryNextBaseUrl(data, response, options) && index < baseUrls.length - 1) {
+      lastError = new Error(message);
+      (lastError as Error & { status?: number }).status = response.status;
+      continue;
     }
 
     if (response.status === 401 || response.status === 403) {
@@ -119,9 +174,15 @@ export async function apiRequest(path: string, options: RequestOptions = {}) {
 
     const error = new Error(message);
     (error as Error & { status?: number }).status = response.status;
+    if (__DEV__) {
+      console.error('[apiRequest:error]', { url, status: response.status, message, data });
+    }
     throw error;
   }
 
-  return data;
-}
+  if (lastError) {
+    throw lastError;
+  }
 
+  throw new Error('API request failed');
+}

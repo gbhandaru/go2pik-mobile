@@ -21,8 +21,8 @@ export default function SignupScreen() {
     setLocalError('');
     try {
       await signup({
-        full_name: form.fullName,
-        email: form.email,
+        full_name: form.fullName.trim(),
+        email: form.email.trim(),
         password: form.password,
         ...(form.phone ? { phone: form.phone } : {}),
       });
@@ -36,10 +36,48 @@ export default function SignupScreen() {
     <Page>
       <Card>
         <SectionTitle eyebrow="Customer access" title="Create account" subtitle="Register once and reuse the app for future pickup orders." />
-        <Field label="Full name" value={form.fullName} onChangeText={(fullName) => setForm((prev) => ({ ...prev, fullName }))} placeholder="Jane Doe" />
-        <Field label="Email" value={form.email} onChangeText={(email) => setForm((prev) => ({ ...prev, email }))} placeholder="you@example.com" keyboardType="email-address" />
-        <Field label="Password" value={form.password} onChangeText={(password) => setForm((prev) => ({ ...prev, password }))} placeholder="Create a password" secureTextEntry />
-        <Field label="Phone (optional)" value={form.phone} onChangeText={(phone) => setForm((prev) => ({ ...prev, phone }))} placeholder="(555) 123-4567" keyboardType="phone-pad" />
+        <Field
+          label="Full name"
+          value={form.fullName}
+          onChangeText={(fullName) => setForm((prev) => ({ ...prev, fullName }))}
+          placeholder="Jane Doe"
+          autoCapitalize="words"
+          autoCorrect={false}
+          textContentType="name"
+        />
+        <Field
+          label="Email"
+          value={form.email}
+          onChangeText={(email) => setForm((prev) => ({ ...prev, email }))}
+          placeholder="you@example.com"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="email"
+          textContentType="emailAddress"
+        />
+        <Field
+          label="Password"
+          value={form.password}
+          onChangeText={(password) => setForm((prev) => ({ ...prev, password }))}
+          placeholder="Create a password"
+          secureTextEntry
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="password"
+          textContentType="password"
+        />
+        <Field
+          label="Phone (optional)"
+          value={form.phone}
+          onChangeText={(phone) => setForm((prev) => ({ ...prev, phone }))}
+          placeholder="(555) 123-4567"
+          keyboardType="phone-pad"
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="tel"
+          textContentType="telephoneNumber"
+        />
         {localError || error ? <Text style={styles.error}>{localError || error}</Text> : null}
         <Button title={loading ? 'Creating account…' : 'Create account'} onPress={() => void handleSubmit()} loading={loading} />
         <Button title="Back to login" variant="ghost" onPress={() => pushRoute(router, '/login')} />

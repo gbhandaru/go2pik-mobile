@@ -2,10 +2,13 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 import {
   clearAuthTokens,
+  clearCustomerGuestAccess,
   consumeAuthNotice,
   getAuthToken,
   getRefreshToken,
   getStoredProfile,
+  hasCustomerGuestAccess,
+  setCustomerGuestAccess,
   storeAuthTokens,
 } from '@/lib/auth-storage';
 import {
@@ -23,6 +26,7 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   login: (credentials: Record<string, unknown>) => Promise<unknown>;
   signup: (payload: Record<string, unknown>) => Promise<unknown>;
+  continueAsGuest: () => void;
   logout: () => Promise<void>;
   sessionNotice: string;
   consumeSessionNotice: () => string;
@@ -32,6 +36,15 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 function notifyWelcomeEmail(payload: unknown) {
   void payload;
+}
+
+function resolveCustomerProfile(response: unknown) {
+  if (!response || typeof response !== 'object') {
+    return null;
+  }
+
+  const record = response as Record<string, unknown>;
+  return record.user || record.customer || record.profile || null;
 }
 
 export function CustomerAuthProvider({ children }: { children: React.ReactNode }) {
@@ -48,32 +61,41 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
       const refreshToken = getRefreshToken();
 
       if (!token && !refreshToken) {
-        setState((prev) => ({ ...prev, loading: false }));
+        const guestMode = hasCustomerGuestAccess();
+        setState((prev) => ({
+          ...prev,
+          loading: false,
+          sessionNotice: consumeAuthNotice(),
+          user: guestMode ? prev.user : null,
+        }));
         return;
       }
 
       try {
         if (token) {
-          const profile = await fetchCustomerProfile();
+          const profileResponse = await fetchCustomerProfile();
+          const profile = resolveCustomerProfile(profileResponse) || profileResponse;
           storeAuthTokens({ accessToken: token, profile });
           setState({ user: profile, loading: false, error: null, sessionNotice: consumeAuthNotice() });
           return;
         }
 
         const response = await customerRefreshSession(refreshToken || '');
+        const profile = resolveCustomerProfile(response);
         storeAuthTokens({
           accessToken: response?.access_token,
           refreshToken: response?.refresh_token,
-          profile: response?.user,
+          profile,
         });
         setState({
-          user: response?.user || null,
+          user: profile,
           loading: false,
           error: null,
           sessionNotice: consumeAuthNotice(),
         });
       } catch {
         clearAuthTokens();
+        clearCustomerGuestAccess();
         setState({ user: null, loading: false, error: null, sessionNotice: consumeAuthNotice() });
       }
     }
@@ -96,14 +118,20 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
       login: async (credentials) => {
         setState((prev) => ({ ...prev, loading: true, error: null }));
         try {
-          const response = await customerLogin(credentials);
+          clearCustomerGuestAccess();
+          const normalizedCredentials = {
+            ...credentials,
+            email: typeof credentials.email === 'string' ? credentials.email.trim() : credentials.email,
+          };
+          const response = await customerLogin(normalizedCredentials);
+          const profile = resolveCustomerProfile(response);
           storeAuthTokens({
             accessToken: response?.access_token,
             refreshToken: response?.refresh_token,
-            profile: response?.user,
+            profile,
           });
           setState({
-            user: response?.user || null,
+            user: profile,
             loading: false,
             error: null,
             sessionNotice: '',
@@ -118,14 +146,21 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
       signup: async (payload) => {
         setState((prev) => ({ ...prev, loading: true, error: null }));
         try {
-          const response = await customerSignup(payload);
+          clearCustomerGuestAccess();
+          const normalizedPayload = {
+            ...payload,
+            email: typeof payload.email === 'string' ? payload.email.trim() : payload.email,
+            full_name: typeof payload.full_name === 'string' ? payload.full_name.trim() : payload.full_name,
+          };
+          const response = await customerSignup(normalizedPayload);
+          const profile = resolveCustomerProfile(response);
           storeAuthTokens({
             accessToken: response?.access_token,
             refreshToken: response?.refresh_token,
-            profile: response?.user,
+            profile,
           });
           setState({
-            user: response?.user || null,
+            user: profile,
             loading: false,
             error: null,
             sessionNotice: '',
@@ -138,6 +173,11 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
           throw error;
         }
       },
+      continueAsGuest: () => {
+        clearAuthTokens();
+        setCustomerGuestAccess(true);
+        setState({ user: null, loading: false, error: null, sessionNotice: '' });
+      },
       logout: async () => {
         const refreshToken = getRefreshToken();
         try {
@@ -148,6 +188,7 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
           console.warn('Failed to notify server about logout', error);
         }
         clearAuthTokens();
+        clearCustomerGuestAccess();
         setState({ user: null, loading: false, error: null, sessionNotice: '' });
       },
     }),
@@ -164,4 +205,3 @@ export function useCustomerAuth() {
   }
   return ctx;
 }
-

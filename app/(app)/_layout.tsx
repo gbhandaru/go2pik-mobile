@@ -4,14 +4,14 @@ import { Platform } from 'react-native';
 
 export default function CustomerTabsLayout() {
   return (
-    <Tabs
+      <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#f97316',
-        tabBarInactiveTintColor: '#8ca0be',
+        tabBarActiveTintColor: '#16a34a',
+        tabBarInactiveTintColor: '#94a3b8',
         tabBarStyle: {
-          backgroundColor: '#111b2e',
-          borderTopColor: 'rgba(159, 177, 202, 0.12)',
+          backgroundColor: '#ffffff',
+          borderTopColor: '#e5e7eb',
           paddingTop: 8,
           paddingBottom: Platform.select({ ios: 22, default: 10 }),
           height: Platform.select({ ios: 92, default: 72 }),
@@ -35,4 +35,3 @@ export default function CustomerTabsLayout() {
     </Tabs>
   );
 }
-
