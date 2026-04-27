@@ -6,17 +6,40 @@ export type KitchenOrder = {
   displayId?: string;
   status?: string;
   customerName?: string;
+  customer?: {
+    name?: string;
+    phone?: string;
+    email?: string;
+  };
   pickupType?: string;
   pickupTime?: string;
   pickupAt?: string;
   scheduledPickupTime?: string;
+  pickupRequest?: {
+    type?: string;
+    scheduledTime?: string;
+  };
   total?: number;
   totalDisplay?: number | string;
   totalItems?: number;
-  items?: Array<{ id?: string; name?: string; quantity?: number; specialInstructions?: string }>;
+  items?: Array<{
+    id?: string;
+    name?: string;
+    quantity?: number;
+    specialInstructions?: string;
+    lineTotal?: number;
+    price?: number;
+  }>;
   createdAt?: string;
   placedAt?: string;
   completedAt?: string;
+  acceptedAt?: string;
+  preparingAt?: string;
+  readyAt?: string;
+  restaurant?: {
+    id?: string;
+    name?: string;
+  };
 };
 
 export const KITCHEN_STATUS_LABELS: Record<string, string> = {
@@ -33,7 +56,7 @@ export function getKitchenOrderNumber(order: KitchenOrder) {
 }
 
 export function getKitchenCustomerName(order: KitchenOrder) {
-  return order.customerName || 'Guest';
+  return order.customerName || order.customer?.name || 'Guest';
 }
 
 export function getKitchenTotalItems(order: KitchenOrder) {
@@ -49,11 +72,15 @@ export function getKitchenStatusLabel(status?: string) {
 }
 
 export function getKitchenPickupTime(order: KitchenOrder) {
-  return order.pickupTime || order.pickupAt || order.scheduledPickupTime || '';
+  return order.pickupTime || order.pickupAt || order.scheduledPickupTime || order.pickupRequest?.scheduledTime || '';
+}
+
+export function getKitchenPickupType(order: KitchenOrder) {
+  return order.pickupType || order.pickupRequest?.type || '';
 }
 
 export function getKitchenAgeMinutes(order: KitchenOrder) {
-  const timestamp = order.createdAt || order.placedAt || order.completedAt || null;
+  const timestamp = order.createdAt || order.placedAt || order.completedAt || order.acceptedAt || order.preparingAt || order.readyAt || null;
   if (!timestamp) return 0;
   const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) return 0;
@@ -77,7 +104,7 @@ export function getKitchenTotalValue(order: KitchenOrder) {
 }
 
 export function formatKitchenOrderTime(order: KitchenOrder) {
-  const timestamp = order.createdAt || order.placedAt || order.completedAt || null;
+  const timestamp = order.createdAt || order.placedAt || order.completedAt || order.acceptedAt || order.preparingAt || order.readyAt || null;
   return formatTimestamp(timestamp);
 }
 
@@ -86,3 +113,32 @@ export function getKitchenItemInstructions(item: { specialInstructions?: string 
   return item.specialInstructions || '';
 }
 
+export function getKitchenOrderTimingLabel(order: KitchenOrder) {
+  const waitLabel = getKitchenWaitLabel(order);
+  const orderTime = formatKitchenOrderTime(order);
+  const parts = [];
+
+  if (orderTime) {
+    parts.push(`Placed ${orderTime}`);
+  }
+  if (waitLabel) {
+    parts.push(`Waiting ${waitLabel}`);
+  }
+
+  return parts.join(' • ');
+}
+
+export function getKitchenOrderPickupLabel(order: KitchenOrder) {
+  const pickupType = getKitchenPickupType(order);
+  const pickupTime = getKitchenPickupTime(order);
+  const parts = [];
+
+  if (pickupType) {
+    parts.push(pickupType);
+  }
+  if (pickupTime) {
+    parts.push(pickupTime);
+  }
+
+  return parts.join(' • ');
+}

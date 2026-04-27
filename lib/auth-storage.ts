@@ -8,6 +8,7 @@ const KITCHEN_REFRESH_TOKEN_KEY = 'go2pik.kitchenRefreshToken';
 const KITCHEN_PROFILE_KEY = 'go2pik.kitchenProfile';
 const AUTH_NOTICE_KEY = 'go2pik.authNotice';
 const KITCHEN_AUTH_NOTICE_KEY = 'go2pik.kitchenAuthNotice';
+const CUSTOMER_GUEST_ACCESS_KEY = 'go2pik.customerGuestAccess';
 
 type Store = Record<string, string>;
 type KeyName =
@@ -18,7 +19,8 @@ type KeyName =
   | typeof KITCHEN_REFRESH_TOKEN_KEY
   | typeof KITCHEN_PROFILE_KEY
   | typeof AUTH_NOTICE_KEY
-  | typeof KITCHEN_AUTH_NOTICE_KEY;
+  | typeof KITCHEN_AUTH_NOTICE_KEY
+  | typeof CUSTOMER_GUEST_ACCESS_KEY;
 
 const SECURE_KEYS: KeyName[] = [
   ACCESS_TOKEN_KEY,
@@ -29,6 +31,7 @@ const SECURE_KEYS: KeyName[] = [
   KITCHEN_PROFILE_KEY,
   AUTH_NOTICE_KEY,
   KITCHEN_AUTH_NOTICE_KEY,
+  CUSTOMER_GUEST_ACCESS_KEY,
 ];
 
 function getMemoryStore(): Store {
@@ -197,6 +200,21 @@ export function consumeAuthNotice() {
   const message = readItem(AUTH_NOTICE_KEY) || '';
   removeItem(AUTH_NOTICE_KEY);
   return message;
+}
+
+export function hasCustomerGuestAccess() {
+  return readItem(CUSTOMER_GUEST_ACCESS_KEY) === 'true';
+}
+
+export function setCustomerGuestAccess(enabled: boolean) {
+  void (async () => {
+    if (enabled) await writeItem(CUSTOMER_GUEST_ACCESS_KEY, 'true');
+    else await removeItem(CUSTOMER_GUEST_ACCESS_KEY);
+  })();
+}
+
+export function clearCustomerGuestAccess() {
+  void removeItem(CUSTOMER_GUEST_ACCESS_KEY);
 }
 
 export function getKitchenAuthToken() {

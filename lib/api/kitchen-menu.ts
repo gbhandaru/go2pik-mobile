@@ -83,6 +83,23 @@ export function toggleKitchenMenuItemAvailability(menuItemId: string, payload: R
   });
 }
 
+export function updateKitchenMenuItem(menuItemId: string, payload: Record<string, unknown>) {
+  if (!menuItemId) throw new Error('menuItemId is required');
+  return apiRequest(`/dashboard/menu-items/${encodeURIComponent(menuItemId)}`, {
+    method: 'PUT',
+    body: payload,
+    scope: 'kitchen',
+  });
+}
+
+export function deleteKitchenMenuItem(menuItemId: string) {
+  if (!menuItemId) throw new Error('menuItemId is required');
+  return apiRequest(`/dashboard/menu-items/${encodeURIComponent(menuItemId)}`, {
+    method: 'DELETE',
+    scope: 'kitchen',
+  });
+}
+
 export function createKitchenMenuItem(restaurantId: string | number, payload: Record<string, unknown>) {
   const resolvedRestaurantId = resolveRestaurantId(restaurantId);
   if (!resolvedRestaurantId) throw new Error('restaurantId is required');

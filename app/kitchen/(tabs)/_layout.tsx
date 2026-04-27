@@ -7,14 +7,14 @@ export default function KitchenTabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#f97316',
-        tabBarInactiveTintColor: '#8ca0be',
+        tabBarActiveTintColor: '#4f9d69',
+        tabBarInactiveTintColor: '#8a97a4',
         tabBarStyle: {
-          backgroundColor: '#111b2e',
-          borderTopColor: 'rgba(159, 177, 202, 0.12)',
+          backgroundColor: '#ffffff',
+          borderTopColor: '#e3e9e0',
           paddingTop: 8,
           paddingBottom: Platform.select({ ios: 22, default: 10 }),
-          height: Platform.select({ ios: 92, default: 72 }),
+          height: Platform.select({ ios: 90, default: 72 }),
         },
       }}
     >
@@ -33,20 +33,12 @@ export default function KitchenTabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="ready"
+        name="reports"
         options={{
-          title: 'Ready',
-          tabBarIcon: ({ color, size }) => <Ionicons name="bag-check-outline" color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
-        name="completed"
-        options={{
-          title: 'Done',
-          tabBarIcon: ({ color, size }) => <Ionicons name="checkmark-done-outline" color={color} size={size} />,
+          title: 'Reports',
+          tabBarIcon: ({ color, size }) => <Ionicons name="bar-chart-outline" color={color} size={size} />,
         }}
       />
     </Tabs>
   );
 }
-

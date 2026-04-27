@@ -9,8 +9,69 @@ export function submitOrder(payload: Record<string, unknown>) {
   return apiRequest('/orders', { method: 'POST', body: payload, scope: 'customer' });
 }
 
+export function startOrderVerification(payload: Record<string, unknown>) {
+  return apiRequest('/orders/verification/start', {
+    method: 'POST',
+    body: payload,
+    auth: false,
+    scope: 'customer',
+  });
+}
+
+export function resendOrderVerification(payload: Record<string, unknown>) {
+  return apiRequest('/orders/verification/resend', {
+    method: 'POST',
+    body: payload,
+    auth: false,
+    scope: 'customer',
+  });
+}
+
+export function confirmOrderVerification(payload: Record<string, unknown>) {
+  return apiRequest('/orders/verification/confirm', {
+    method: 'POST',
+    body: payload,
+    auth: false,
+    scope: 'customer',
+  });
+}
+
 export function fetchOrderById(id: string) {
   return apiRequest(`/orders/${id}`, { scope: 'customer' });
+}
+
+export function fetchOrderReview(orderNumber: string, token: string) {
+  if (!orderNumber) throw new Error('orderNumber is required');
+  if (!token) throw new Error('token is required');
+
+  return apiRequest(`/orders/review/${encodeURIComponent(orderNumber)}?token=${encodeURIComponent(token)}`, {
+    auth: false,
+    scope: 'customer',
+  });
+}
+
+export function acceptReviewedOrder(orderNumber: string, token: string) {
+  if (!orderNumber) throw new Error('orderNumber is required');
+  if (!token) throw new Error('token is required');
+
+  return apiRequest(`/orders/review/${encodeURIComponent(orderNumber)}/accept-updated?token=${encodeURIComponent(token)}`, {
+    method: 'PATCH',
+    auth: false,
+    scope: 'customer',
+    body: {},
+  });
+}
+
+export function cancelReviewedOrder(orderNumber: string, token: string, note?: string) {
+  if (!orderNumber) throw new Error('orderNumber is required');
+  if (!token) throw new Error('token is required');
+
+  return apiRequest(`/orders/review/${encodeURIComponent(orderNumber)}/cancel?token=${encodeURIComponent(token)}`, {
+    method: 'PATCH',
+    auth: false,
+    scope: 'customer',
+    body: note ? { note } : {},
+  });
 }
 
 export function fetchOrdersByStatus(status?: string) {
@@ -21,6 +82,16 @@ export function fetchOrdersByStatus(status?: string) {
 
   const query = status ? `?status=${encodeURIComponent(status)}` : '';
   return apiRequest(`/dashboard/restaurants/${encodeURIComponent(restaurantId)}/orders${query}`, {
+    scope: 'kitchen',
+  });
+}
+
+export function fetchKitchenOrdersReport(restaurantId: string, query = '') {
+  if (!restaurantId) {
+    throw new Error('restaurantId is required');
+  }
+
+  return apiRequest(`/dashboard/restaurants/${encodeURIComponent(restaurantId)}/reports/orders${query}`, {
     scope: 'kitchen',
   });
 }

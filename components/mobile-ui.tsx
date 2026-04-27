@@ -14,15 +14,15 @@ import {
 } from 'react-native';
 
 const COLORS = {
-  bg: '#0b1220',
-  surface: '#111b2e',
-  surface2: '#172338',
-  card: '#eef4ff',
-  text: '#f8fafc',
-  muted: '#9fb1ca',
+  bg: '#f9fafb',
+  surface: '#ffffff',
+  surface2: '#f3f4f6',
+  card: '#ffffff',
+  text: '#111827',
+  muted: '#6b7280',
   accent: '#f97316',
   accentSoft: '#fed7aa',
-  border: 'rgba(159, 177, 202, 0.18)',
+  border: '#e5e7eb',
   danger: '#ef4444',
   success: '#22c55e',
   white: '#ffffff',
@@ -32,21 +32,22 @@ type PageProps = {
   children: ReactNode;
   scroll?: boolean;
   contentStyle?: StyleProp<ViewStyle>;
+  backgroundColor?: string;
 };
 
-export function Page({ children, scroll = true, contentStyle }: PageProps) {
+export function Page({ children, scroll = true, contentStyle, backgroundColor }: PageProps) {
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, backgroundColor ? { backgroundColor } : null]}>
       {scroll ? (
         <ScrollView
-          style={styles.flex}
+          style={[styles.flex, backgroundColor ? { backgroundColor } : null]}
           contentContainerStyle={[styles.page, contentStyle]}
           keyboardShouldPersistTaps="handled"
         >
           {children}
         </ScrollView>
       ) : (
-        <View style={[styles.flex, styles.page, contentStyle]}>{children}</View>
+        <View style={[styles.flex, styles.page, backgroundColor ? { backgroundColor } : null, contentStyle]}>{children}</View>
       )}
     </SafeAreaView>
   );
@@ -82,6 +83,9 @@ export function Field({
   secureTextEntry,
   keyboardType,
   autoCapitalize = 'none',
+  autoComplete,
+  textContentType,
+  autoCorrect = false,
   multiline = false,
   style,
 }: {
@@ -92,9 +96,33 @@ export function Field({
   secureTextEntry?: boolean;
   keyboardType?: 'default' | 'email-address' | 'phone-pad' | 'numeric';
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  autoComplete?:
+    | 'email'
+    | 'password'
+    | 'name'
+    | 'username'
+    | 'one-time-code'
+    | 'new-password'
+    | 'tel'
+    | 'off';
+  textContentType?:
+    | 'emailAddress'
+    | 'password'
+    | 'newPassword'
+    | 'name'
+    | 'telephoneNumber'
+    | 'username'
+    | 'oneTimeCode';
+  autoCorrect?: boolean;
   multiline?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
+  const resolvedAutoComplete =
+    autoComplete ?? (secureTextEntry ? 'password' : keyboardType === 'email-address' ? 'email' : undefined);
+  const resolvedTextContentType =
+    textContentType ??
+    (secureTextEntry ? 'password' : keyboardType === 'email-address' ? 'emailAddress' : undefined);
+
   return (
     <View style={style}>
       <Text style={styles.fieldLabel}>{label}</Text>
@@ -106,6 +134,9 @@ export function Field({
         secureTextEntry={secureTextEntry}
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize}
+        autoCorrect={autoCorrect}
+        autoComplete={resolvedAutoComplete}
+        textContentType={resolvedTextContentType}
         multiline={multiline}
         style={[styles.input, multiline ? styles.inputMultiline : null]}
       />
@@ -123,6 +154,8 @@ export function Button({
   loading = false,
   fullWidth = true,
   compact = false,
+  style,
+  textStyle,
 }: {
   title: string;
   onPress: () => void;
@@ -131,6 +164,8 @@ export function Button({
   loading?: boolean;
   fullWidth?: boolean;
   compact?: boolean;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
 }) {
   const labelColor =
     variant === 'ghost' ? COLORS.text : variant === 'secondary' ? COLORS.text : COLORS.white;
@@ -144,6 +179,7 @@ export function Button({
         variantStyles[variant],
         fullWidth ? styles.buttonFullWidth : null,
         compact ? styles.buttonCompact : null,
+        style,
         (disabled || loading) && styles.buttonDisabled,
         pressed && !disabled && !loading ? styles.buttonPressed : null,
       ]}
@@ -151,7 +187,7 @@ export function Button({
       {loading ? (
         <ActivityIndicator color={labelColor} />
       ) : (
-        <Text style={[styles.buttonText, { color: labelColor }]}>{title}</Text>
+        <Text style={[styles.buttonText, { color: labelColor }, textStyle]}>{title}</Text>
       )}
     </Pressable>
   );
@@ -196,27 +232,45 @@ export function EmptyState({
   subtitle,
   actionLabel,
   onAction,
+  style,
+  titleStyle,
+  subtitleStyle,
+  buttonStyle,
+  buttonTextStyle,
 }: {
   title: string;
   subtitle?: string;
   actionLabel?: string;
   onAction?: () => void;
+  style?: StyleProp<ViewStyle>;
+  titleStyle?: StyleProp<TextStyle>;
+  subtitleStyle?: StyleProp<TextStyle>;
+  buttonStyle?: StyleProp<ViewStyle>;
+  buttonTextStyle?: StyleProp<TextStyle>;
 }) {
   return (
-    <Card style={styles.emptyState}>
-      <Text style={styles.emptyTitle}>{title}</Text>
-      {subtitle ? <Text style={styles.emptySubtitle}>{subtitle}</Text> : null}
+    <Card style={[styles.emptyState, style]}>
+      <Text style={[styles.emptyTitle, titleStyle]}>{title}</Text>
+      {subtitle ? <Text style={[styles.emptySubtitle, subtitleStyle]}>{subtitle}</Text> : null}
       {actionLabel && onAction ? (
-        <Button title={actionLabel} onPress={onAction} />
+        <Button title={actionLabel} onPress={onAction} style={buttonStyle} textStyle={buttonTextStyle} />
       ) : null}
     </Card>
   );
 }
 
-export function Chip({ label }: { label: string }) {
+export function Chip({
+  label,
+  style,
+  textStyle,
+}: {
+  label: string;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
+}) {
   return (
-    <View style={styles.chip}>
-      <Text style={styles.chipText}>{label}</Text>
+    <View style={[styles.chip, style]}>
+      <Text style={[styles.chipText, textStyle]}>{label}</Text>
     </View>
   );
 }
@@ -296,20 +350,20 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: 24,
+    borderRadius: 16,
     padding: 16,
     gap: 14,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
+    shadowColor: '#0f172a',
+    shadowOpacity: 0.06,
     shadowOffset: { width: 0, height: 8 },
     shadowRadius: 18,
-    elevation: 4,
+    elevation: 2,
   },
   sectionTitle: {
     gap: 6,
   },
   eyebrow: {
-    color: COLORS.accentSoft,
+    color: '#16a34a',
     textTransform: 'uppercase',
     letterSpacing: 1.4,
     fontSize: 12,
@@ -363,11 +417,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   buttonPressed: {
-    opacity: 0.85,
+    opacity: 0.92,
     transform: [{ scale: 0.99 }],
   },
   buttonDisabled: {
-    opacity: 0.55,
+    opacity: 0.7,
   },
   buttonText: {
     fontWeight: '700',
@@ -406,7 +460,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(159, 177, 202, 0.15)',
+    backgroundColor: '#e5e7eb',
   },
   segmentCountActive: {
     backgroundColor: 'rgba(255, 255, 255, 0.18)',
@@ -440,10 +494,10 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    backgroundColor: 'rgba(249, 115, 22, 0.14)',
+    backgroundColor: 'rgba(249, 115, 22, 0.12)',
   },
   chipText: {
-    color: COLORS.accentSoft,
+    color: COLORS.accent,
     fontSize: 12,
     fontWeight: '700',
   },
@@ -465,7 +519,7 @@ const styles = StyleSheet.create({
     gap: 4,
     borderRadius: 18,
     padding: 14,
-    backgroundColor: COLORS.surface2,
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
   },

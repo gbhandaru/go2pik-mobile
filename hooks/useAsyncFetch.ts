@@ -19,7 +19,11 @@ export function useAsyncFetch<T>(asyncFn: () => Promise<T>, deps: unknown[] = []
         setState({ data, loading: false, error: null });
       } catch (error) {
         if (!isActive) return;
-        setState({ data: null, loading: false, error: error instanceof Error ? error.message : 'Request failed' });
+        const message = error instanceof Error ? error.message : 'Request failed';
+        if (__DEV__) {
+          console.error('[useAsyncFetch] request failed', error);
+        }
+        setState({ data: null, loading: false, error: message });
       }
     }
 

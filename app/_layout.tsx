@@ -8,7 +8,7 @@ import 'react-native-reanimated';
 import { CustomerAuthProvider } from '@/hooks/useCustomerAuth';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { hydrateAuthStorage } from '@/lib/auth-storage';
-import { hydratePendingOrderStorage } from '@/lib/pending-order';
+import { hydrateOrderVerificationStorage, hydratePendingOrderStorage } from '@/lib/pending-order';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -17,7 +17,7 @@ export default function RootLayout() {
   useEffect(() => {
     let mounted = true;
 
-    void Promise.all([hydrateAuthStorage(), hydratePendingOrderStorage()]).finally(() => {
+    void Promise.all([hydrateAuthStorage(), hydratePendingOrderStorage(), hydrateOrderVerificationStorage()]).finally(() => {
       if (mounted) {
         setHydrated(true);
       }
@@ -31,10 +31,10 @@ export default function RootLayout() {
   if (!hydrated) {
     return (
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0b1220' }}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9fafb' }}>
           <ActivityIndicator color="#f97316" />
         </View>
-        <StatusBar style="light" />
+        <StatusBar style="dark" />
       </ThemeProvider>
     );
   }
@@ -45,7 +45,7 @@ export default function RootLayout() {
         <Stack
           screenOptions={{
             headerShown: false,
-            contentStyle: { backgroundColor: '#0b1220' },
+            contentStyle: { backgroundColor: '#f9fafb' },
           }}
         >
           <Stack.Screen name="index" />
@@ -56,10 +56,15 @@ export default function RootLayout() {
           <Stack.Screen name="restaurants/[restaurantId]" />
           <Stack.Screen name="checkout" />
           <Stack.Screen name="order-confirmation" />
+          <Stack.Screen name="verification" />
+          <Stack.Screen name="privacy" />
+          <Stack.Screen name="terms" />
+          <Stack.Screen name="order/[orderNumber]" />
           <Stack.Screen name="kitchen" />
+          <Stack.Screen name="not-found" />
         </Stack>
       </CustomerAuthProvider>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
     </ThemeProvider>
   );
 }

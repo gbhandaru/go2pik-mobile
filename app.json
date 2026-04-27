@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "go2pik-mobile",
+    "name": "Go2Pik",
     "slug": "go2pik-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -12,6 +12,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.ehatechnologies.go2pik",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -44,6 +45,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "eb405aa1-dfb6-4e30-8fad-c16d2f5b0073"
+      }
+    },
+    "owner": "gbhandaru"
   }
 }

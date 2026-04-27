@@ -25,6 +25,21 @@ In the output, you'll find options to open the app in a
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
+## Environment setup
+
+The app reads `EXPO_PUBLIC_API_BASE_URL` from a real `.env` file at the project root during local development.
+
+1. Local development:
+
+   - Use `.env.local` in the repo root for your machine-specific value.
+   - This project already includes `.env.local` with the current Go2Pik API endpoint.
+   - Restart Expo after changing any environment variable.
+
+2. EAS builds and releases:
+
+   - The same `EXPO_PUBLIC_API_BASE_URL` value is defined in `eas.json` for the `development`, `preview`, and `production` build profiles.
+   - If you prefer to manage values in Expo's EAS environment store instead, you can run `eas env:pull` to sync them locally and then update the remote values in the Expo dashboard or CLI.
+
 ## Get a fresh project
 
 When you're ready, run:
